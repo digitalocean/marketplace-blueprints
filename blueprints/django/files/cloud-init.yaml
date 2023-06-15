@@ -1,0 +1,94 @@
+#cloud-config
+
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+write_files:
+- path: /etc/environment
+  content: |
+    DATABASE_URL="${db_url}"
+    DATABASE_PROTOCOL="${db_protocol}"
+    DATABASE_USERNAME="${db_username}"
+    DATABASE_PASSWORD="${db_password}"
+    DATABASE_HOST="${db_host}"
+    DATABASE_PORT="${db_port}"
+    DATABASE_DB="${db_name}"
+    DJANGO_PROJECT_URL="${project_url}"
+  append: true
+- path: /root/.digitalocean_dbaas_credentials
+  content: |
+    db_protocol="${db_url}"
+    db_username="${db_username}"
+    db_password="${db_password}"
+    db_host="${db_host}"
+    db_port="${db_port}"
+    db_database="${db_name}"
+- path: /home/django/django_init.sh
+  permissions: '0755'
+  content: |
+    #!/bin/bash
+    #
+
+    [ -z "$DJANGO_PROJECT_URL" ] && exit 0
+
+    cd /home/django
+
+    echo "Install custom project"
+
+    git clone $${DJANGO_PROJECT_URL}
+    cd $(basename $${DJANGO_PROJECT_URL} .git)
+
+    MANAGE_FILE=$(find . -name "manage.py"|head -n 1)
+
+    if [ -z "$MANAGE_FILE" ] || ! test -f "$MANAGE_FILE"; then
+        echo "File manage.py is not found, can't continue"
+        exit 1    
+    fi
+
+    echo "manager file is found!"
+
+    PROJECT_DIR=$(dirname "$${MANAGE_FILE}")
+
+    ABSOLUTE_DIR=$(readlink -e $PROJECT_DIR)
+
+    cd $PROJECT_DIR
+
+    FILE="requirements.txt"
+    if test -f "$FILE"; then
+        echo "Found requirements, installing"
+        pip install -r requirements.txt
+    fi
+
+    SETTINGS_FILE=$(find $${ABSOLUTE_DIR} -name "settings.py"|head -n 1)
+
+    sub=$(cat $SETTINGS_FILE|grep 'WSGI_APPLICATION')
+    re="WSGI_APPLICATION.*=.*['\"]{1}(.*)\.application"
+
+    if [[ $sub =~ $re ]]; then 
+        APP_NAME=$${BASH_REMATCH[1]}; 
+    else
+        echo "Application name is not found"
+        exit 1
+    fi
+
+    DBAAS_PARAMS=$(perl -0777 -ne 'print /DATABASES = \{.*\}\s/sg' /home/django/django_project/django_project/settings.py 2>&1)
+    perl -i~ -0777 -pe "s/DATABASES = \{.*\}\s/$DBAAS_PARAMS/sg" $${SETTINGS_FILE}
+
+    python3 manage.py migrate
+
+    sed "s/WorkingDirectory=.*/WorkingDirectory=$${ABSOLUTE_DIR//\//\\\/}/" /etc/systemd/system/gunicorn.service | \
+        sed "s/--pythonpath=[^ ]* /--pythonpath=$${ABSOLUTE_DIR//\//\\\/} /" | \
+        sed "s/ [^ ]*\.wsgi:/ $${APP_NAME}:/" > /tmp/gunicorn.service
+    cp /tmp/gunicorn.service /etc/systemd/system/gunicorn.service
+
+    systemctl daemon-reload
+    systemctl restart gunicorn
+
+    sleep 5
+
+    echo "Job is done, enjoy it"
+
+runcmd:
+  - /home/django/django_init.sh
+
