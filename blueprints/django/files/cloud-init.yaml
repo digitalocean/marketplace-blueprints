@@ -31,8 +31,6 @@ write_files:
     #!/bin/bash
     #
 
-    echo "script is started" > /home/django/test_init.txt
-
     # wait for gunicorn running
 
     sleep 1
@@ -42,10 +40,6 @@ write_files:
     done
 
     source /etc/environment
-
-    echo "service is running!" >> /home/django/test_init.txt
-    echo "pass: $DJANGO_USER_PASSWORD" >> /home/django/test_init.txt
-
 
     # update DB password in django_project
 
