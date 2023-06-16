@@ -15,6 +15,7 @@ write_files:
     DATABASE_PORT="${db_port}"
     DATABASE_DB="${db_name}"
     DJANGO_PROJECT_URL="${project_url}"
+    DJANGO_USER_PASSWORD="${django_user_password}"
   append: true
 - path: /root/.digitalocean_dbaas_credentials
   content: |
@@ -29,6 +30,36 @@ write_files:
   content: |
     #!/bin/bash
     #
+
+    echo "script is started" > /home/django/test_init.txt
+
+    # wait for gunicorn running
+
+    sleep 1
+    while [[ ! $(systemctl -l status gunicorn 2>&1 | grep -m1 'Loaded: loaded') ]]; do
+        echo "waiting for service" >> /home/django/test_init.txt
+        sleep 30
+    done
+
+    echo "service is running!" >> /home/django/test_init.txt
+    echo "pass: $DJANGO_USER_PASSWORD" >> /home/django/test_init.txt
+
+
+    # update DB password in django_project
+
+    old_pass=$(perl -0777 -ne "print /DATABASES = \{[^\}]*('PASSWORD':[^']*'[^']+').*\}\s/sg" /home/django/django_project/django_project/settings.py)
+    sed -i~ "s/$old_pass/'PASSWORD': '$DJANGO_USER_PASSWORD'/" /home/django/django_project/django_project/settings.py
+
+    # update django db user password
+
+    psql $DATABASE_URL -c "ALTER USER django WITH PASSWORD '$DJANGO_USER_PASSWORD';"
+
+    #lets migrate with new password
+    cd /home/django/django_project
+
+    python3 manage.py migrate 
+
+    # continue with custom app
 
     [ -z "$DJANGO_PROJECT_URL" ] && exit 0
 
@@ -90,5 +121,6 @@ write_files:
     echo "Job is done, enjoy it"
 
 runcmd:
-  - /home/django/django_init.sh
+  - nohup /home/django/django_init.sh&
+  - echo "test" > /home/django/test
 

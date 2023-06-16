@@ -9,5 +9,6 @@ data "template_file" "cloud-init-yaml" {
     db_password = element(digitalocean_database_cluster.db-cluster, 0).password
     db_name = element(digitalocean_database_cluster.db-cluster, 0).database
     project_url = var.project_url
+    django_user_password = random_password.password.result
   }
 }
