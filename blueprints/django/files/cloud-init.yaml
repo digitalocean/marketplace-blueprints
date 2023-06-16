@@ -41,13 +41,15 @@ write_files:
         sleep 30
     done
 
+    source /etc/environment
+
     echo "service is running!" >> /home/django/test_init.txt
     echo "pass: $DJANGO_USER_PASSWORD" >> /home/django/test_init.txt
 
 
     # update DB password in django_project
 
-    old_pass=$(perl -0777 -ne "print /DATABASES = \{[^\}]*('PASSWORD':[^']*'[^']+').*\}\s/sg" /home/django/django_project/django_project/settings.py)
+    old_pass=$(perl -0777 -ne "print /DATABASES = \{[^\}]*('PASSWORD':[^']*'[^']*').*\}\s/sg" /home/django/django_project/django_project/settings.py)
     sed -i~ "s/$old_pass/'PASSWORD': '$DJANGO_USER_PASSWORD'/" /home/django/django_project/django_project/settings.py
 
     # update django db user password
