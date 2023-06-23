@@ -35,14 +35,15 @@ write_files:
 
     sleep 1
     while [[ ! $(systemctl -l status gunicorn 2>&1 | grep -m1 'Loaded: loaded') ]]; do
-        echo "waiting for service" >> /home/django/test_init.txt
+        echo "waiting for gunicorn service to start" | tee -a /home/django/stack_init.log
         sleep 30
     done
 
     source /etc/environment
 
     # update DB password in django_project
-
+    echo "actualizing database password" | tee -a /home/django/stack_init.log
+    
     old_pass=$(perl -0777 -ne "print /DATABASES = \{[^\}]*('PASSWORD':[^']*'[^']*').*\}\s/sg" /home/django/django_project/django_project/settings.py)
     sed -i~ "s/$old_pass/'PASSWORD': '$DJANGO_USER_PASSWORD'/" /home/django/django_project/django_project/settings.py
 
@@ -50,7 +51,8 @@ write_files:
 
     psql $DATABASE_URL -c "ALTER USER django WITH PASSWORD '$DJANGO_USER_PASSWORD';"
 
-    #lets migrate with new password
+    # run migrations with actualized password
+    
     cd /home/django/django_project
 
     python3 manage.py migrate 
@@ -60,8 +62,8 @@ write_files:
     [ -z "$DJANGO_PROJECT_URL" ] && exit 0
 
     cd /home/django
-
-    echo "Install custom project"
+    
+    echo "installing custom project from $${DJANGO_PROJECT_URL}" | tee -a /home/django/stack_init.log
 
     git clone $${DJANGO_PROJECT_URL}
     cd $(basename $${DJANGO_PROJECT_URL} .git)
@@ -69,11 +71,11 @@ write_files:
     MANAGE_FILE=$(find . -name "manage.py"|head -n 1)
 
     if [ -z "$MANAGE_FILE" ] || ! test -f "$MANAGE_FILE"; then
-        echo "File manage.py is not found, can't continue"
+        echo "manage.py not found, can't continue" | tee -a /home/django/stack_init.log
         exit 1    
     fi
 
-    echo "manager file is found!"
+    echo "manage.py file is found, continuing" | tee -a /home/django/stack_init.log
 
     PROJECT_DIR=$(dirname "$${MANAGE_FILE}")
 
@@ -83,7 +85,7 @@ write_files:
 
     FILE="requirements.txt"
     if test -f "$FILE"; then
-        echo "Found requirements, installing"
+        echo "requirements.txt found, installing" | tee -a /home/django/stack_init.log
         pip install -r requirements.txt
     fi
 
@@ -95,7 +97,7 @@ write_files:
     if [[ $sub =~ $re ]]; then 
         APP_NAME=$${BASH_REMATCH[1]}; 
     else
-        echo "Application name is not found"
+        echo "application name not found, can't continue" | tee -a /home/django/stack_init.log
         exit 1
     fi
 
@@ -114,9 +116,7 @@ write_files:
 
     sleep 5
 
-    echo "Job is done, enjoy it"
+    echo "Stack droplet is configured, enjoy!" | tee -a /home/django/stack_init.log
 
 runcmd:
   - nohup /home/django/django_init.sh&
-  - echo "test" > /home/django/test
-
