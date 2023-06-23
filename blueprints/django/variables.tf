@@ -41,7 +41,7 @@ variable "db_engine_version" {
   default = "12"
 }
 variable "db_cluster_name" {
-  default = "stack-db-cluster"
+  default = "django-stack-db-cluster"
 }
 variable "db_size_slug" {
   default = "db-s-1vcpu-1gb"
