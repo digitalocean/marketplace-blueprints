@@ -20,7 +20,7 @@ variable "image" {
   default = "django-20-04"
 }
 variable "droplet_size_slug" {
-  default = "s-1vcpu-1gb"
+  default = "s-4vcpu-8gb"
 }
 
 variable "lb_count" {
