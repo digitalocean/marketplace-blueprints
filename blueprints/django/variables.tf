@@ -9,7 +9,7 @@ variable "project_uuid" {
 }
 
 variable "droplet_count" {
-  default = 2
+  default = 3
 }
 variable "droplet_names" {
   default = ["django-stack-droplet-0", "django-stack-droplet-1", "django-stack-droplet-2"]
