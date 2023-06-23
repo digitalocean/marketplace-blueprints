@@ -44,7 +44,7 @@ variable "db_cluster_name" {
   default = "django-stack-db-cluster"
 }
 variable "db_size_slug" {
-  default = "db-s-1vcpu-1gb"
+  default = "db-s-1vcpu-1gb" // TODO(v-aisac): is this correct db slug?
 }
 
 variable "tag_list" {
