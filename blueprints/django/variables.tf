@@ -12,7 +12,7 @@ variable "droplet_count" {
   default = 2
 }
 variable "droplet_names" {
-  default = ["stack-droplet-0", "stack-droplet-1"]
+  default = ["django-stack-droplet-0", "django-stack-droplet-1", "django-stack-droplet-2"]
   type = list(string)
 }
 variable "image" { 
