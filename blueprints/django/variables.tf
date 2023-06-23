@@ -28,7 +28,7 @@ variable "lb_count" {
 }
 
 variable "lb_name" {
-  default = "stack-lb"
+  default = "django-stack-lb"
 }
 
 variable "create_db" {
