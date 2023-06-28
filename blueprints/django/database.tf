@@ -1,5 +1,4 @@
 resource "digitalocean_database_cluster" "db-cluster" {
-  count      = 1
   name       = var.db_cluster_name
   engine     = var.db_engine
   version    = var.db_engine_version
