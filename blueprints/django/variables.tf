@@ -50,7 +50,7 @@ variable "region" {
 }
 
 variable "project_url" {
-  default = ""
+  default = "https://github.com/DaniDiazTech/Django-Url-Shortener"
 }
 
 variable "api_host" {
