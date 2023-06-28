@@ -23,17 +23,10 @@ variable "droplet_size_slug" {
   default = "s-4vcpu-8gb"
 }
 
-variable "lb_count" {
-  default = 1
-}
-
 variable "lb_name" {
   default = "django-stack-lb"
 }
 
-variable "create_db" {
-  default = false
-}
 variable "db_engine" {
   default = "pg"
 }
