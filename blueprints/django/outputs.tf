@@ -1,6 +1,6 @@
 output "load_balancer_ids" {
   description = "IDs of created load balancers"
-  value       = digitalocean_loadbalancer.lb[*].id
+  value       = digitalocean_loadbalancer.lb.id
 }
 
 output "droplet_ids" {
@@ -10,5 +10,5 @@ output "droplet_ids" {
 
 output "database_ids" {
   description = "ID of created database cluster"
-  value = digitalocean_database_cluster.db-cluster[*].id
+  value = digitalocean_database_cluster.db-cluster.id
 }
