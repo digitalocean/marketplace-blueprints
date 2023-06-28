@@ -1,5 +1,4 @@
 resource "digitalocean_loadbalancer" "lb" {
-  count  = 1
   name   = var.lb_name
   region = var.region
   project_id = data.digitalocean_project.selected_proj.id
