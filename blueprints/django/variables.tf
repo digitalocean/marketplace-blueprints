@@ -17,7 +17,7 @@ variable "droplet_names" {
 }
 variable "image" { 
   // Can be either image slug or ID
-  default = "django-22-04"
+  default = "django-20-04" // It is actually 22-04, it's just old slug sticking around
 }
 variable "droplet_size_slug" {
   default = "s-4vcpu-8gb"
