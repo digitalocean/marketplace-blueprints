@@ -113,10 +113,12 @@ write_files:
 
     systemctl daemon-reload
     systemctl restart gunicorn
-
+    
+    rm -r /home/django/django_project
+    
     sleep 5
 
-    echo "Stack droplet is configured, enjoy!" | tee -a /home/django/stack_init.log
+    echo "stack droplet is configured, enjoy!" | tee -a /home/django/stack_init.log
 
 runcmd:
   - nohup /home/django/django_init.sh&
