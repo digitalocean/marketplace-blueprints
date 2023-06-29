@@ -1,0 +1,124 @@
+#cloud-config
+
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+write_files:
+- path: /etc/environment
+  content: |
+    DATABASE_URL="${db_url}"
+    DATABASE_PROTOCOL="${db_protocol}"
+    DATABASE_USERNAME="${db_username}"
+    DATABASE_PASSWORD="${db_password}"
+    DATABASE_HOST="${db_host}"
+    DATABASE_PORT="${db_port}"
+    DATABASE_DB="${db_name}"
+    DJANGO_PROJECT_URL="${project_url}"
+    DJANGO_USER_PASSWORD="${django_user_password}"
+  append: true
+- path: /root/.digitalocean_dbaas_credentials
+  content: |
+    db_protocol="${db_url}"
+    db_username="${db_username}"
+    db_password="${db_password}"
+    db_host="${db_host}"
+    db_port="${db_port}"
+    db_database="${db_name}"
+- path: /home/django/django_init.sh
+  permissions: '0755'
+  content: |
+    #!/bin/bash
+    #
+
+    # wait for gunicorn running
+
+    sleep 1
+    while [[ ! $(systemctl -l status gunicorn 2>&1 | grep -m1 'Loaded: loaded') ]]; do
+        echo "waiting for gunicorn service to start" | tee -a /home/django/stack_init.log
+        sleep 30
+    done
+
+    source /etc/environment
+
+    # update DB password in django_project
+    echo "actualizing database password" | tee -a /home/django/stack_init.log
+    
+    old_pass=$(perl -0777 -ne "print /DATABASES = \{[^\}]*('PASSWORD':[^']*'[^']*').*\}\s/sg" /home/django/django_project/django_project/settings.py)
+    sed -i~ "s/$old_pass/'PASSWORD': '$DJANGO_USER_PASSWORD'/" /home/django/django_project/django_project/settings.py
+
+    # update django db user password
+
+    psql $DATABASE_URL -c "ALTER USER django WITH PASSWORD '$DJANGO_USER_PASSWORD';"
+
+    # run migrations with actualized password
+    
+    cd /home/django/django_project
+
+    python3 manage.py migrate 
+
+    # continue with custom app
+
+    [ -z "$DJANGO_PROJECT_URL" ] && exit 0
+
+    cd /home/django
+    
+    echo "installing custom project from $${DJANGO_PROJECT_URL}" | tee -a /home/django/stack_init.log
+
+    git clone $${DJANGO_PROJECT_URL}
+    cd $(basename $${DJANGO_PROJECT_URL} .git)
+
+    MANAGE_FILE=$(find . -name "manage.py"|head -n 1)
+
+    if [ -z "$MANAGE_FILE" ] || ! test -f "$MANAGE_FILE"; then
+        echo "manage.py not found, can't continue" | tee -a /home/django/stack_init.log
+        exit 1    
+    fi
+
+    echo "manage.py file is found, continuing" | tee -a /home/django/stack_init.log
+
+    PROJECT_DIR=$(dirname "$${MANAGE_FILE}")
+
+    ABSOLUTE_DIR=$(readlink -e $PROJECT_DIR)
+
+    cd $PROJECT_DIR
+
+    FILE="requirements.txt"
+    if test -f "$FILE"; then
+        echo "requirements.txt found, installing" | tee -a /home/django/stack_init.log
+        pip install -r requirements.txt
+    fi
+
+    SETTINGS_FILE=$(find $${ABSOLUTE_DIR} -name "settings.py"|head -n 1)
+
+    sub=$(cat $SETTINGS_FILE|grep 'WSGI_APPLICATION')
+    re="WSGI_APPLICATION.*=.*['\"]{1}(.*)\.application"
+
+    if [[ $sub =~ $re ]]; then 
+        APP_NAME=$${BASH_REMATCH[1]}; 
+    else
+        echo "application name not found, can't continue" | tee -a /home/django/stack_init.log
+        exit 1
+    fi
+
+    DBAAS_PARAMS=$(perl -0777 -ne 'print /DATABASES = \{.*\}\s/sg' /home/django/django_project/django_project/settings.py 2>&1)
+    perl -i~ -0777 -pe "s/DATABASES = \{.*\}\s/$DBAAS_PARAMS/sg" $${SETTINGS_FILE}
+
+    python3 manage.py migrate
+
+    sed "s/WorkingDirectory=.*/WorkingDirectory=$${ABSOLUTE_DIR//\//\\\/}/" /etc/systemd/system/gunicorn.service | \
+        sed "s/--pythonpath=[^ ]* /--pythonpath=$${ABSOLUTE_DIR//\//\\\/} /" | \
+        sed "s/ [^ ]*\.wsgi:/ $${APP_NAME}:/" > /tmp/gunicorn.service
+    cp /tmp/gunicorn.service /etc/systemd/system/gunicorn.service
+
+    systemctl daemon-reload
+    systemctl restart gunicorn
+    
+    rm -r /home/django/django_project
+    
+    sleep 5
+
+    echo "stack droplet is configured, enjoy!" | tee -a /home/django/stack_init.log
+
+runcmd:
+  - nohup /home/django/django_init.sh&
