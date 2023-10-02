@@ -20,6 +20,7 @@ After you log in, you will have access to the Kibana dashboard!
 
 ## Stack details
 - XPACK basic security enabled.
+- This stack does not provide Elastic license. If your business requires one, it is your responsibility to get one.
 - Latest APT versions of ElasticSearch, Kibana and LogStash.
 - ElasticSearch discovery mode is set to single node.
 - ElasticSearch, Kibana and LogStash and configured to run as systemctl services.
