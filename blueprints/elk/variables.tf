@@ -1,4 +1,7 @@
-variable "do_token" {}
+variable "do_token" {
+  default = "dop_v1_your_beautiful_token_here"
+}
+
 variable "ssh_key_ids" {
   default = []
   type = list(number)
