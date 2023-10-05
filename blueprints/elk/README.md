@@ -4,6 +4,12 @@ This stack will deploy 3 droplets with the following components: ElasticSearch, 
 
 ElasticSearch and Kibana are configured out-of-box and LogStash is ready-to-use. 
 
+## How to use this blueprint?
+
+Learn [here](../../README.md#how-to-use-digitalocean-blueprints) how to use this blueprint.
+
+Keep in mind, ELK stack requires around 5-6 minutes after droplets creation to self configure.
+
 ## Getting started with ELK stack
 
 After the stack is deployed, give it 5-6 minutes to finish configuration. After this, you can access Kibana at `http://<kibana-droplet-ip>:5601`. You should see Login screen:
