@@ -29,7 +29,7 @@ resource "digitalocean_droplet" "kibana" {
     elasticsearch.hosts: ["http://${digitalocean_droplet.elasticsearch.ipv4_address}:9200"]
 
     elasticsearch.username: "kibana"
-    elasticsearch.password: "${random_password.password.result}"
+    elasticsearch.password: "${random_password.kibana_password.result}"
 
     logging:
       appenders:
