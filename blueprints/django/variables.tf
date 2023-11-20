@@ -1,8 +1,4 @@
 variable "do_token" {}
-variable "ssh_key_ids" {
-  default = []
-  type = list(number)
-}
 
 variable "project_uuid" {
   default = ""

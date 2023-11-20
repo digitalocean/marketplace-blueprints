@@ -3,7 +3,7 @@ resource "digitalocean_droplet" "logstash" {
   name   = "elk-stack-logstash"
   region = var.region
   size   = var.droplet_size_slug
-  ssh_keys = var.ssh_key_ids
+  ssh_keys = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]
   tags = [for k, v in digitalocean_tag.tags : v.id]
 
   connection {
