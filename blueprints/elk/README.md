@@ -24,7 +24,7 @@ Near the Elastic password, you will see Kibana and LogStash passwords as well.
 
 After you log in, you will have access to the Kibana dashboard!
 
-LogStash if configured with the `syslog` inputs on ports: `1514` for UDP messages and `10514` for TCP messages. The output is configured to write to index `logstash-syslog` of the ElasticSearch instance created with the stack. LogStash Droplet uses the `logstash` user with the `logstash_writer` role providing access to the `logstash-*` indices.
+LogStash is configured with the `syslog` inputs on ports: `1514` for UDP messages and `10514` for TCP messages. The output is configured to write to index `logstash-syslog` of the ElasticSearch instance created with the stack. LogStash Droplet uses the `logstash` user with the `logstash_writer` role providing access to the `logstash-*` indices.
 
 ## Stack details
 - XPACK basic security enabled.
@@ -34,3 +34,4 @@ LogStash if configured with the `syslog` inputs on ports: `1514` for UDP message
 - ElasticSearch, Kibana, and LogStash and configured to run as systemctl services.
 - ElasticSearch configuration logs are available at `/var/log/user_data.log` file.
 - Kibana configuration logs are available at `/var/log/user_data.log` file.
+- LogStash listens to ports `1514/UDP` and `10514/TCP`.
