@@ -1,6 +1,7 @@
 resource "digitalocean_droplet" "logstash" {
   image  = "sharklabs-logstash"
   name   = "elk-stack-logstash"
+  monitoring = true
   region = var.region
   size   = var.droplet_size_slug
   ssh_keys = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]

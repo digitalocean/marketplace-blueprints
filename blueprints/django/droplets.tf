@@ -2,6 +2,7 @@ resource "digitalocean_droplet" "dropl" {
   count  = var.droplet_count
   image  = var.image
   name   = "${var.droplet_names[count.index]}"
+  monitoring = true
   region = var.region
   size   = var.droplet_size_slug
   ssh_keys = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]
