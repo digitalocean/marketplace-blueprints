@@ -1,6 +1,7 @@
 resource "digitalocean_droplet" "kibana" {
   image  = "sharklabs-kibana"
   name   = "elk-stack-kibana"
+  monitoring = true
   region = var.region
   size   = var.droplet_size_slug
   ssh_keys = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]
