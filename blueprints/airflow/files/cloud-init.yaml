@@ -1,0 +1,33 @@
+#cloud-config
+
+package_update: true
+package_upgrade: true
+package_reboot_if_required: true
+
+write_files:
+  - path: /root/.digitalocean_dbaas_credentials
+    content: |
+      db_protocol="${db_protocol}"
+      db_username="${db_username}"
+      db_password="${db_password}"
+      db_host="${db_host}"
+      db_port="${db_port}"
+      db_database="${db_name}"
+
+      keystore_name="${keystore_name}"
+      keystore_protocol="${keystore_protocol}"
+      redis_conn_id="${redis_conn_id}"
+      redis_url="${redis_url}"
+      redis_host="${redis_host}"
+      redis_port="${redis_port}"
+      redis_username="${redis_username}"
+      redis_password="${redis_password}"
+  - path: /root/.digitalocean_spaces_credentials
+    content: |
+      spaces_conn_type="${spaces_conn_type}"
+      spaces_host="${spaces_host}"
+      spaces_bucket_name="${spaces_bucket_name}"
+      spaces_access_key_id="${spaces_access_id}"
+      spaces_secret_key="${spaces_secret_key}"
+      spaces_region="${spaces_region}"
+      spaces_conn_id="${spaces_conn_id}"
