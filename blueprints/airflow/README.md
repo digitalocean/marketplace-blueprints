@@ -15,7 +15,7 @@ Learn [here](../../README.md#how-to-use-digitalocean-blueprints) how to use this
 
 ## Getting started with Airflow
 
-After the stack is deployed, you can access Kibana at `http://<airflow-droplet-ip>`. You should see the Login screen:
+After the stack is deployed, you can access the Airflow dashboard at `http://<airflow-droplet-ip>`. You should see the Login screen:
 
 ![Airflow Login](https://do-not-delete-droplet-assets.nyc3.digitaloceanspaces.com/airflow-1.png)
 
