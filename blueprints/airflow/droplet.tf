@@ -1,6 +1,6 @@
 resource "digitalocean_droplet" "airflow" {
   image  = var._image
-  name   = var.droplet_name
+  name   = "${local.resource_name}"
   monitoring = true
   region = var.region
   size   = var.droplet_size_slug

@@ -13,11 +13,24 @@ variable "_api_host" {
 variable "project_uuid" {
   default = ""
 }
+
+variable "project_id" {
+  type        = string
+  description = "Existing Project ID. If empty, a new project will be created."
+  default     = ""
+}
+
+variable "basename" {
+  type        = string
+  description = "The base name used to auto-generate resource names."
+  default     = "data-workflow-starter-kit"
+}
+
 variable "project_url" {
   default = ""
 }
 variable "tag_list" {
-  default = ["blueprint-resource"]
+  default = ["data-workflow-starter-kit-resource"]
   type = list(string)
 }
 variable "region" {
@@ -97,11 +110,12 @@ variable "_keystore_connection_id"{
 variable "_keystore_engine" {
   default = "redis"
 }
-variable "_keystore_protocol" {
-  default = "redis"
-}
-variable "_keystore_engine_version" {
-  default = "7"
+
+variable "keystore_engine" {
+  default = "valkey"
 }
 
+variable "keystore_version" {
+  default = "8"
+}
 
