@@ -5,32 +5,20 @@ output "droplet_id" {
 
 output "database_id" {
   description = "ID of created database cluster"
-  value = digitalocean_database_cluster.db-cluster.id
+  value       = digitalocean_database_cluster.db-cluster.id
 }
 
 output "redis_id" {
-  description = "ID of created keystore"
+  description = "ID of created keystore (Valkey)"
   value       = digitalocean_database_cluster.kv-cluster.id
 }
 
 output "bucket_id" {
-  description = "ID of created spaces bucket"
-  value = digitalocean_spaces_bucket.spaces_bucket.id
+  description = "ID of created spaces bucket (if Spaces credentials were provided)"
+  value       = length(digitalocean_spaces_bucket.spaces_bucket) > 0 ? digitalocean_spaces_bucket.spaces_bucket[0].id : "Not created - provide spaces_access_id and spaces_secret_key to enable"
 }
 
 output "spaces_bucket_endpoint" {
-  description = "The API endpoint for the Spaces bucket"
-  value       = digitalocean_spaces_bucket.spaces_bucket.endpoint
-}
-
-output "spaces_access_id" {
-  description = "The newly generated Spaces Access Key ID"
-  value       = digitalocean_spaces_key.airflow_key.access_key
-  sensitive   = true
-}
-
-output "spaces_secret_key" {
-  description = "The newly generated Spaces Secret Key"
-  value       = digitalocean_spaces_key.airflow_key.secret_key
-  sensitive   = true
+  description = "The API endpoint for the Spaces bucket (if created)"
+  value       = length(digitalocean_spaces_bucket.spaces_bucket) > 0 ? digitalocean_spaces_bucket.spaces_bucket[0].endpoint : "Not created - provide spaces_access_id and spaces_secret_key to enable"
 }

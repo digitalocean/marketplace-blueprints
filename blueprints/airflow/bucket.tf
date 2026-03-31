@@ -1,14 +1,9 @@
+# Spaces bucket - only created if Spaces credentials are provided
 resource "digitalocean_spaces_bucket" "spaces_bucket" {
-  name   = "${local.resource_name}"
+  count  = var.spaces_access_id != "" && var.spaces_secret_key != "" ? 1 : 0
+  name   = "${local.resource_name}-bucket"
   region = var.region
 }
 
-resource "digitalocean_spaces_key" "airflow_key" {
-  name = "${local.resource_name}-spaces-key"
-
-  # Scopes the generated key to this specific bucket
-  grant {
-    bucket     = digitalocean_spaces_bucket.spaces_bucket.name
-    permission = "readwrite" # Accepts "read" or "readwrite" for specific buckets
-  }
-}
+# Note: Spaces keys can be created separately via DigitalOcean control panel or CLI
+# and provided as variables to enable bucket creation
