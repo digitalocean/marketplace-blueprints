@@ -1,19 +1,19 @@
 resource "digitalocean_droplet" "kibana" {
-  image  = "sharklabs-kibana"
-  name   = "elk-stack-kibana"
+  image      = "sharklabs-kibana"
+  name       = "elk-stack-kibana"
   monitoring = true
-  region = var.region
-  size   = var.droplet_size_slug
-  ssh_keys = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]
-  tags = [for k, v in digitalocean_tag.tags : v.id]
+  region     = var.region
+  size       = var.droplet_size_slug
+  ssh_keys   = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]
+  tags       = [for k, v in digitalocean_tag.tags : v.id]
 
-  depends_on = [ digitalocean_droplet.elasticsearch ]
+  depends_on = [digitalocean_droplet.elasticsearch]
 
   connection {
-    host = self.ipv4_address
-    user = "root"
-    type = "ssh"
-    agent = true
+    host    = self.ipv4_address
+    user    = "root"
+    type    = "ssh"
+    agent   = true
     timeout = "2m"
   }
 

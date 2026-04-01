@@ -1,13 +1,13 @@
 terraform {
   required_providers {
     digitalocean = {
-      source = "digitalocean/digitalocean"
-      version = "~> 2.0"
+      source  = "digitalocean/digitalocean"
+      version = "~> 2.80.0"
     }
   }
 }
 
 provider "digitalocean" {
-  token = var.do_token
+  token        = var.do_token
   api_endpoint = var.api_host
 }

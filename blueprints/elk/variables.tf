@@ -1,5 +1,5 @@
 variable "do_token" {
-  default = "dop_v1_your_beautiful_token_here"
+  default = ""
 }
 
 variable "project_uuid" {
@@ -12,11 +12,11 @@ variable "droplet_size_slug" {
 
 variable "tag_list" {
   default = []
-  type = list(string)
+  type    = list(string)
 }
 
 variable "region" {
-  default = "nyc3"
+  default = "sfo3"
 }
 
 variable "project_url" {
