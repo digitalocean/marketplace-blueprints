@@ -1,3 +1,10 @@
+locals {
+  kibana_user_data = var.provision_kibana_enrollment ? file("${path.module}/templates/kibana-userdata-enrollment.sh") : templatefile("${path.module}/templates/kibana-userdata-password.sh.tftpl", {
+    elasticsearch_ipv4 = digitalocean_droplet.elasticsearch.ipv4_address
+    kibana_password    = random_password.kibana_password.result
+  })
+}
+
 resource "digitalocean_droplet" "kibana" {
   image      = "sharklabs-kibana"
   name       = "elk-stack-kibana"
@@ -17,41 +24,26 @@ resource "digitalocean_droplet" "kibana" {
     timeout = "2m"
   }
 
-  user_data = <<-EOF
-    #!/bin/bash
+  user_data = local.kibana_user_data
+}
 
-    echo "Starting setup" >> /var/log/user_data.log
+resource "null_resource" "kibana_enrollment" {
+  count = var.provision_kibana_enrollment ? 1 : 0
 
-    echo "Updating Kibana config" >> /var/log/user_data.log
+  triggers = {
+    kibana_id        = digitalocean_droplet.kibana.id
+    elasticsearch_id = digitalocean_droplet.elasticsearch.id
+  }
 
-    cat > /etc/kibana/kibana.yml <<EOM
-    server.host: "0.0.0.0"
+  depends_on = [
+    digitalocean_droplet.elasticsearch,
+    digitalocean_droplet.kibana,
+  ]
 
-    elasticsearch.hosts: ["http://${digitalocean_droplet.elasticsearch.ipv4_address}:9200"]
-
-    elasticsearch.username: "kibana"
-    elasticsearch.password: "${random_password.kibana_password.result}"
-
-    logging:
-      appenders:
-        file:
-          type: file
-          fileName: /var/log/kibana/kibana.log
-          layout:
-            type: json
-      root:
-        appenders:
-          - default
-          - file
-
-    pid.file: /run/kibana/kibana.pid
-    EOM
-
-    echo "Restarting Kibana" >> /var/log/user_data.log
-
-    systemctl restart kibana
-
-    echo "Done!" >> /var/log/user_data.log
-
-    EOF
+  provisioner "local-exec" {
+    environment = {
+      KIBANA_FALLBACK_PASSWORD = nonsensitive(random_password.kibana_password.result)
+    }
+    command = "${path.module}/scripts/kibana-enrollment.sh ${digitalocean_droplet.elasticsearch.ipv4_address} ${digitalocean_droplet.kibana.ipv4_address}"
+  }
 }

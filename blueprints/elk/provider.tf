@@ -4,6 +4,10 @@ terraform {
       source  = "digitalocean/digitalocean"
       version = "~> 2.80.0"
     }
+    null = {
+      source  = "hashicorp/null"
+      version = "~> 3.2"
+    }
   }
 }
 
