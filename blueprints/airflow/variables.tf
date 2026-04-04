@@ -129,5 +129,5 @@ variable "_keystore_engine_version" {
 
 variable "_keystore_protocol" {
   type    = string
-  default = "rediss"
+  default = "redis"
 }
