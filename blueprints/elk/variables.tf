@@ -1,9 +1,13 @@
 variable "do_token" {
-  default = ""
+  type        = string
+  sensitive   = true
+  description = "DigitalOcean API token. Pass at apply time, e.g. terraform apply -var=\"do_token=$DIGITALOCEAN_TOKEN\" or export TF_VAR_do_token=..."
 }
 
-variable "project_uuid" {
-  default = ""
+variable "stack_name" {
+  type        = string
+  default     = "elk"
+  description = "Prefix for the auto-generated project name, droplet hostnames, and primary stack tag; a random suffix is appended (e.g. elk-a1b2c3)."
 }
 
 variable "droplet_size_slug" {
@@ -11,16 +15,13 @@ variable "droplet_size_slug" {
 }
 
 variable "tag_list" {
-  default = []
-  type    = list(string)
+  type        = list(string)
+  default     = []
+  description = "Optional extra DigitalOcean tags (in addition to the auto-generated stack tag)."
 }
 
 variable "region" {
   default = "sfo3"
-}
-
-variable "project_url" {
-  default = ""
 }
 
 variable "api_host" {

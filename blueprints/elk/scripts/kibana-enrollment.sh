@@ -14,12 +14,32 @@ SSH_OPTS=(
   -o StrictHostKeyChecking=no
   -o UserKnownHostsFile=/dev/null
   -o ConnectTimeout=15
+  -o BatchMode=yes
 )
+
+# Droplets are "active" in the API before sshd accepts connections; wait before provisioning.
+wait_for_ssh() {
+  local ip="$1"
+  local label="$2"
+  local i
+  for i in $(seq 1 90); do
+    if ssh "${SSH_OPTS[@]}" "root@${ip}" "echo ok" >/dev/null 2>&1; then
+      echo "${label} (${ip}): SSH is ready."
+      return 0
+    fi
+    echo "Waiting for SSH on ${label} (${ip}) — attempt ${i}/90..."
+    sleep 10
+  done
+  echo "Timed out waiting for SSH on ${label} (${ip})" >&2
+  return 1
+}
 
 fetch_token() {
   ssh "${SSH_OPTS[@]}" "root@${ES_IP}" \
     'set -a; source /root/.digitalocean_passwords 2>/dev/null; printf %s "$KIBANA_ENROLLMENT_TOKEN"'
 }
+
+wait_for_ssh "$ES_IP" "Elasticsearch" || exit 1
 
 TOKEN=""
 for i in $(seq 1 90); do
@@ -37,6 +57,10 @@ if [[ -z "$TOKEN" ]]; then
 fi
 
 B64="$(printf '%s' "$TOKEN" | base64 | tr -d '\n')"
+
+wait_for_ssh "$KB_IP" "Kibana" || exit 1
+# Brief pause after first successful probe — avoids occasional refused on the next connection.
+sleep 15
 
 ssh "${SSH_OPTS[@]}" "root@${KB_IP}" bash -s -- "$B64" "$ES_IP" "$PW_B64_LOCAL" <<'REMOTE'
 set -euo pipefail

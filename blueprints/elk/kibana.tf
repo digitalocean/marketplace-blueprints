@@ -7,12 +7,12 @@ locals {
 
 resource "digitalocean_droplet" "kibana" {
   image      = "sharklabs-kibana"
-  name       = "elk-stack-kibana"
+  name       = "${local.resource_name}-kibana"
   monitoring = true
   region     = var.region
   size       = var.droplet_size_slug
   ssh_keys   = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]
-  tags       = [for k, v in digitalocean_tag.tags : v.id]
+  tags       = concat([digitalocean_tag.stack.id], [for k, v in digitalocean_tag.tags : v.id])
 
   depends_on = [digitalocean_droplet.elasticsearch]
 
