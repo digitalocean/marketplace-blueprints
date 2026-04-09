@@ -1,9 +1,12 @@
-data "digitalocean_project" "selected_proj" {
-  id = var.project_uuid
+resource "digitalocean_project" "elk" {
+  name        = local.resource_name
+  description = "Terraform-managed ELK stack (Elasticsearch, Kibana, Logstash): ${local.resource_name}"
+  purpose     = "Operational / Developer tooling"
+  environment = "Development"
 }
 
 resource "digitalocean_project_resources" "project_resources" {
-  project = data.digitalocean_project.selected_proj.id
+  project = digitalocean_project.elk.id
   resources = [
     digitalocean_droplet.elasticsearch.urn,
     digitalocean_droplet.kibana.urn,

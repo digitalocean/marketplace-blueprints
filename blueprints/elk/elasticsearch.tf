@@ -1,17 +1,17 @@
 resource "digitalocean_droplet" "elasticsearch" {
-  image  = "elasticsearch"
-  name   = "elk-stack-elasticsearch"
+  image      = "elasticsearch"
+  name       = "${local.resource_name}-elasticsearch"
   monitoring = true
-  region = var.region
-  size   = var.droplet_size_slug
-  ssh_keys = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]
-  tags = [for k, v in digitalocean_tag.tags : v.id]
+  region     = var.region
+  size       = var.droplet_size_slug
+  ssh_keys   = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]
+  tags       = concat([digitalocean_tag.stack.id], [for k, v in digitalocean_tag.tags : v.id])
 
   connection {
-    host = self.ipv4_address
-    user = "root"
-    type = "ssh"
-    agent = true
+    host    = self.ipv4_address
+    user    = "root"
+    type    = "ssh"
+    agent   = true
     timeout = "7m"
   }
 
