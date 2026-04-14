@@ -5,6 +5,19 @@ resource "digitalocean_app" "chat_ui" {
     name   = "${local.resource_name}-chat"
     region = var.region
 
+    ingress {
+      rule {
+        component {
+          name = "chat-ui"
+        }
+        match {
+          path {
+            prefix = "/"
+          }
+        }
+      }
+    }
+
     service {
       name               = "chat-ui"
       instance_count     = 1
@@ -27,10 +40,16 @@ resource "digitalocean_app" "chat_ui" {
       }
 
       env {
-        key   = "DO_API_TOKEN"
-        value = var.do_token
+        key   = "AGENT_API_KEY"
+        value = local.agent_api_key
         scope = "RUN_TIME"
         type  = "SECRET"
+      }
+
+      env {
+        key   = "AGENT_ENDPOINT"
+        value = "${local.agent_deploy_url}/api/v1/chat/completions"
+        scope = "RUN_TIME"
       }
 
       env {

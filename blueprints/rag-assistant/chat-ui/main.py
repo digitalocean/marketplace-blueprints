@@ -3,9 +3,10 @@ messages to a DigitalOcean managed GenAI agent and serves a simple web
 interface.
 
 Environment variables (injected by terraform via App Platform):
-    AGENT_UUID   — UUID of the managed agent
-    DO_API_TOKEN — DigitalOcean API token (secret)
-    AGENT_NAME   — Display name of the agent (optional)
+    AGENT_UUID      — UUID of the managed agent
+    AGENT_API_KEY   — Secret key for authenticating with the agent
+    AGENT_ENDPOINT  — Full URL of the agent's OpenAI-compatible chat endpoint
+    AGENT_NAME      — Display name of the agent (optional)
 """
 
 import os
@@ -13,16 +14,14 @@ from pathlib import Path
 
 import httpx
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse
 
 app = FastAPI(title="RAG Assistant")
 
 AGENT_UUID = os.environ["AGENT_UUID"]
-DO_API_TOKEN = os.environ["DO_API_TOKEN"]
+AGENT_API_KEY = os.environ["AGENT_API_KEY"]
+AGENT_ENDPOINT = os.environ["AGENT_ENDPOINT"]
 AGENT_NAME = os.environ.get("AGENT_NAME", "RAG Assistant")
-DO_API_BASE = os.environ.get("DO_API_BASE", "https://api.digitalocean.com")
-
-CHAT_ENDPOINT = f"{DO_API_BASE}/v2/gen-ai/agents/{AGENT_UUID}/chat"
 
 # Serve the static HTML chat page.
 INDEX_HTML = (Path(__file__).parent / "static" / "index.html").read_text()
@@ -41,26 +40,43 @@ async def health():
 
 @app.post("/api/chat")
 async def chat(request: Request):
-    """Proxy a chat message to the managed agent and stream the response."""
+    """Proxy a chat message to the managed agent and return the response."""
     body = await request.json()
     message = body.get("message", "")
-    thread_id = body.get("thread_id")
+    history = body.get("history", [])
 
-    payload = {"message": message}
-    if thread_id:
-        payload["thread_id"] = thread_id
+    # Build OpenAI-compatible messages array.
+    messages = []
+    for h in history:
+        messages.append({"role": h.get("role", "user"), "content": h.get("content", "")})
+    messages.append({"role": "user", "content": message})
+
+    payload = {
+        "messages": messages,
+    }
 
     headers = {
-        "Authorization": f"Bearer {DO_API_TOKEN}",
+        "Authorization": f"Bearer {AGENT_API_KEY}",
         "Content-Type": "application/json",
     }
 
-    async def stream_response():
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            async with client.stream(
-                "POST", CHAT_ENDPOINT, json=payload, headers=headers
-            ) as resp:
-                async for chunk in resp.aiter_bytes():
-                    yield chunk
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        resp = await client.post(AGENT_ENDPOINT, json=payload, headers=headers)
 
-    return StreamingResponse(stream_response(), media_type="application/json")
+    try:
+        data = resp.json()
+    except Exception:
+        return JSONResponse(
+            status_code=resp.status_code,
+            content={"error": resp.text},
+        )
+
+    # Extract the response text from OpenAI-compatible format.
+    content = ""
+    if "choices" in data and len(data["choices"]) > 0:
+        content = data["choices"][0].get("message", {}).get("content", "")
+
+    return JSONResponse(content={
+        "content": content,
+        "usage": data.get("usage"),
+    })
