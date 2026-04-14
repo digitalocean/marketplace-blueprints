@@ -48,7 +48,8 @@ variable "default_model" {
 
 variable "model_uuid" {
   type        = string
-  description = "UUID of the serverless inference model. Resolved by the do-terraform service from the model internal name."
+  default     = ""
+  description = "UUID of the serverless inference model. Resolved by do-terraform or looked up via models API."
 }
 
 variable "embedding_model" {
@@ -59,7 +60,8 @@ variable "embedding_model" {
 
 variable "embedding_model_uuid" {
   type        = string
-  description = "UUID of the embedding model. Resolved by the do-terraform service from the model internal name."
+  default     = ""
+  description = "UUID of the embedding model. Resolved by do-terraform or looked up via models API."
 }
 
 // =============================================================================
