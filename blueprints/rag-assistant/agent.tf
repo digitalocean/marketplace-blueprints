@@ -6,7 +6,7 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
   region     = "tor1"
   project_id = local.active_project_id
 
-  model_uuid  = var.model_uuid
+  model_uuid  = local.resolved_model_uuid
   instruction = var.agent_instruction
   temperature = var.agent_temperature
   max_tokens  = var.agent_max_tokens
@@ -14,6 +14,53 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
 
   provide_citations = true
   retrieval_method  = "RETRIEVAL_METHOD_SUB_QUERIES"
+}
+
+# Resolve model UUIDs from internal names via the public DO API.
+# This avoids needing a gRPC client for model resolution.
+resource "null_resource" "resolve_models" {
+  triggers = {
+    default_model   = var.default_model
+    embedding_model = var.embedding_model
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      set -e
+      TOKEN="${var.do_token}"
+      API="https://api.digitalocean.com/v2/gen-ai"
+
+      # Fetch all models and extract UUIDs by matching the "id" field.
+      MODELS=$(curl -sf -H "Authorization: Bearer $TOKEN" "$API/models?per_page=200")
+
+      # Resolve inference model UUID.
+      MODEL_UUID=$(echo "$MODELS" | grep -o '"uuid":"[^"]*","name":"[^"]*"[^}]*"id":"${var.default_model}"' | grep -o '"uuid":"[^"]*"' | head -1 | cut -d'"' -f4)
+      if [ -z "$MODEL_UUID" ]; then
+        # Try alternate grep pattern (field order may vary).
+        MODEL_UUID=$(echo "$MODELS" | grep -o '"id":"${var.default_model}"[^}]*"uuid":"[^"]*"' | grep -o '"uuid":"[^"]*"' | head -1 | cut -d'"' -f4)
+      fi
+
+      # Resolve embedding model UUID.
+      EMBEDDING_UUID=$(echo "$MODELS" | grep -o '"uuid":"[^"]*","name":"[^"]*"[^}]*"id":"${var.embedding_model}"' | grep -o '"uuid":"[^"]*"' | head -1 | cut -d'"' -f4)
+      if [ -z "$EMBEDDING_UUID" ]; then
+        EMBEDDING_UUID=$(echo "$MODELS" | grep -o '"id":"${var.embedding_model}"[^}]*"uuid":"[^"]*"' | grep -o '"uuid":"[^"]*"' | head -1 | cut -d'"' -f4)
+      fi
+
+      echo "{\"model_uuid\":\"$MODEL_UUID\",\"embedding_model_uuid\":\"$EMBEDDING_UUID\"}" > ${path.module}/resolved_models.json
+    EOT
+  }
+}
+
+data "local_file" "resolved_models" {
+  depends_on = [null_resource.resolve_models]
+  filename   = "${path.module}/resolved_models.json"
+}
+
+locals {
+  resolved_models = jsondecode(data.local_file.resolved_models.content)
+  # Use explicitly provided UUID if set, otherwise use resolved value.
+  resolved_model_uuid     = var.model_uuid != "" ? var.model_uuid : local.resolved_models.model_uuid
+  resolved_embedding_uuid = var.embedding_model_uuid != "" ? var.embedding_model_uuid : local.resolved_models.embedding_model_uuid
 }
 
 # Post-creation: attach KB and guardrails.
