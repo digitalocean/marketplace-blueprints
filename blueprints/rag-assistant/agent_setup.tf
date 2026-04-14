@@ -32,10 +32,18 @@ resource "null_resource" "agent_setup" {
         sleep 5
       done
 
-      # Attach knowledge base
+      # Attach knowledge base (retry up to 5 times)
       echo "Attaching knowledge base..."
-      curl -sf -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" \
-        "$API/agents/$AGENT_ID/knowledge_bases/$KB_ID" || echo "KB attachment failed (may already be attached)"
+      for i in $(seq 1 5); do
+        KB_RESP=$(curl -s -o /dev/null -w "%%{http_code}" -X POST -H "Authorization: Bearer $TOKEN" -H "Content-Type: application/json" -d '{}' \
+          "$API/agents/$AGENT_ID/knowledge_bases/$KB_ID")
+        if [ "$KB_RESP" = "200" ] || [ "$KB_RESP" = "201" ]; then
+          echo "KB attached successfully"
+          break
+        fi
+        echo "  KB attachment returned $KB_RESP (attempt $i/5)"
+        sleep 5
+      done
 
       # Create API key
       echo "Creating API key..."
