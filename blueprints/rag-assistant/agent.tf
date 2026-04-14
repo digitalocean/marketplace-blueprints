@@ -1,5 +1,4 @@
-# Managed agent with knowledge base and guardrails.
-# The chat UI calls this agent's API for all RAG interactions.
+# Managed agent for RAG interactions.
 resource "digitalocean_gradientai_agent" "rag_agent" {
   name        = "${local.resource_name}-agent"
   description = "RAG Assistant powered by serverless inference with knowledge base retrieval and guardrails."
@@ -18,7 +17,27 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
 }
 
 # Attach knowledge base to the agent.
-resource "digitalocean_gradientai_agent_knowledge_base_attachment" "kb_attachment" {
-  agent_uuid          = digitalocean_gradientai_agent.rag_agent.id
-  knowledge_base_uuid = digitalocean_gradientai_knowledge_base.kb.id
+# NOTE: The terraform digitalocean_gradientai_agent_knowledge_base_attachment resource
+# uses the singular API endpoint which returns 400. The plural endpoint works.
+# Using null_resource as a workaround until the provider/godo SDK is fixed.
+resource "null_resource" "kb_attachment" {
+  depends_on = [
+    digitalocean_gradientai_agent.rag_agent,
+    digitalocean_gradientai_knowledge_base.kb,
+  ]
+
+  triggers = {
+    agent_id = digitalocean_gradientai_agent.rag_agent.id
+    kb_id    = digitalocean_gradientai_knowledge_base.kb.id
+  }
+
+  provisioner "local-exec" {
+    command = <<-EOT
+      curl -sf -X POST \
+        -H "Authorization: Bearer ${var.do_token}" \
+        -H "Content-Type: application/json" \
+        -d '{"knowledge_base_uuids":["${digitalocean_gradientai_knowledge_base.kb.id}"]}' \
+        "https://api.digitalocean.com/v2/gen-ai/agents/${digitalocean_gradientai_agent.rag_agent.id}/knowledge_bases"
+    EOT
+  }
 }
