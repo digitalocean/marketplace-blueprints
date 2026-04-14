@@ -11,7 +11,7 @@ locals {
 # Create a new project if project_uuid is not provided.
 resource "digitalocean_project" "rag_assistant" {
   count       = var.project_uuid == "" ? 1 : 0
-  name        = var.basename
+  name        = local.resource_name
   purpose     = "RAG Assistant"
   environment = "Development"
 }

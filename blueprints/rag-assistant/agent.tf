@@ -45,9 +45,3 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
     is_default       = true
   }
 }
-
-# Attach knowledge base to the agent as a separate resource.
-resource "digitalocean_gradientai_agent_knowledge_base_attachment" "kb_attachment" {
-  agent_uuid          = digitalocean_gradientai_agent.rag_agent.id
-  knowledge_base_uuid = digitalocean_gradientai_knowledge_base.kb.id
-}
