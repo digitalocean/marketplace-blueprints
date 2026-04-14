@@ -40,12 +40,12 @@ resource "null_resource" "agent_post_setup" {
       # 1. Wait for KB indexing to complete (required before attachment).
       echo "Waiting for KB indexing to complete..."
       for i in $(seq 1 60); do
-        STATUS=$(curl -sf -H "Authorization: Bearer $TOKEN" "$API/knowledge_bases/$KB_ID" | python3 -c "import json,sys; print(json.load(sys.stdin)['knowledge_base'].get('last_indexing_job',{}).get('status','unknown'))" 2>/dev/null || echo "unknown")
-        if [ "$STATUS" = "INDEX_JOB_STATUS_COMPLETED" ]; then
+        RESP=$(curl -sf -H "Authorization: Bearer $TOKEN" "$API/knowledge_bases/$KB_ID" 2>/dev/null || echo "")
+        if echo "$RESP" | grep -q "INDEX_JOB_STATUS_COMPLETED"; then
           echo "KB indexing complete"
           break
         fi
-        echo "  KB status: $STATUS (attempt $i/60)"
+        echo "  Waiting... (attempt $i/60)"
         sleep 10
       done
 
@@ -59,23 +59,25 @@ resource "null_resource" "agent_post_setup" {
       echo "KB attached"
 
       # 3. Attach guardrails to agent.
-      GUARDRAILS='[]'
+      GUARDRAILS=""
       %{if var.guardrail_jailbreak_uuid != ""~}
-      GUARDRAILS=$(echo "$GUARDRAILS" | python3 -c "import json,sys; g=json.load(sys.stdin); g.append({'guardrail_uuid':'${var.guardrail_jailbreak_uuid}','priority':1}); print(json.dumps(g))")
+      GUARDRAILS="$GUARDRAILS{\"guardrail_uuid\":\"${var.guardrail_jailbreak_uuid}\",\"priority\":1},"
       %{endif~}
       %{if var.guardrail_content_mod_uuid != ""~}
-      GUARDRAILS=$(echo "$GUARDRAILS" | python3 -c "import json,sys; g=json.load(sys.stdin); g.append({'guardrail_uuid':'${var.guardrail_content_mod_uuid}','priority':2}); print(json.dumps(g))")
+      GUARDRAILS="$GUARDRAILS{\"guardrail_uuid\":\"${var.guardrail_content_mod_uuid}\",\"priority\":2},"
       %{endif~}
       %{if var.guardrail_sensitive_data_uuid != ""~}
-      GUARDRAILS=$(echo "$GUARDRAILS" | python3 -c "import json,sys; g=json.load(sys.stdin); g.append({'guardrail_uuid':'${var.guardrail_sensitive_data_uuid}','priority':3}); print(json.dumps(g))")
+      GUARDRAILS="$GUARDRAILS{\"guardrail_uuid\":\"${var.guardrail_sensitive_data_uuid}\",\"priority\":3},"
       %{endif~}
 
-      if [ "$GUARDRAILS" != "[]" ]; then
+      if [ -n "$GUARDRAILS" ]; then
+        # Remove trailing comma.
+        GUARDRAILS=$(echo "$GUARDRAILS" | sed 's/,$//')
         echo "Attaching guardrails..."
         curl -sf -X POST \
           -H "Authorization: Bearer $TOKEN" \
           -H "Content-Type: application/json" \
-          -d "{\"guardrails\":$GUARDRAILS}" \
+          -d "{\"guardrails\":[$GUARDRAILS]}" \
           "$API/agents/$AGENT_ID/guardrails"
         echo "Guardrails attached"
       fi
