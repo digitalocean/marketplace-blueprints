@@ -63,22 +63,18 @@ def _discover_agent():
             logger.error("Agent has no deployment URL. Status: %s", deployment.get("status"))
             raise RuntimeError("Agent deployment URL not available")
 
-        # Extract or create API key.
-        api_keys = agent.get("api_keys", [])
-        if api_keys:
-            AGENT_API_KEY = api_keys[0].get("api_key")
-            logger.info("Using existing agent API key")
-        else:
-            # Create a new API key.
-            logger.info("Creating new agent API key...")
-            key_resp = client.post(
-                f"{DO_API_BASE}/v2/gen-ai/agents/{AGENT_UUID}/api_keys",
-                headers=_do_headers(),
-                json={"name": "chat-ui"},
-            )
-            key_resp.raise_for_status()
-            AGENT_API_KEY = key_resp.json()["api_key_info"]["secret_key"]
-            logger.info("Created agent API key")
+        # Create an API key for agent authentication.
+        # The auto-generated api_keys[].api_key is a chatbot identifier, not a secret key.
+        # We need to create a real API key via the API.
+        logger.info("Creating agent API key...")
+        key_resp = client.post(
+            f"{DO_API_BASE}/v2/gen-ai/agents/{AGENT_UUID}/api_keys",
+            headers=_do_headers(),
+            json={"name": "chat-ui"},
+        )
+        key_resp.raise_for_status()
+        AGENT_API_KEY = key_resp.json()["api_key_info"]["secret_key"]
+        logger.info("Agent API key created")
 
 
 @app.on_event("startup")
