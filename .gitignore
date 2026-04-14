@@ -18,3 +18,4 @@
 *.tfstate.backup
 *.tfvars
 *.tfstate*
+resolved_models.json
