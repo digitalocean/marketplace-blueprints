@@ -14,6 +14,29 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
 
   provide_citations = true
   retrieval_method  = "RETRIEVAL_METHOD_SUB_QUERIES"
+
+  # Guardrails — attached using the team's default guardrails.
+  # do-terraform ensures guardrails exist for the team before running terraform.
+  agent_guardrail {
+    name       = "Jailbreak Detection"
+    type       = "GUARDRAIL_TYPE_JAILBREAK"
+    priority   = 1
+    is_default = true
+  }
+
+  agent_guardrail {
+    name       = "Content Moderation"
+    type       = "GUARDRAIL_TYPE_CONTENT_MODERATION"
+    priority   = 2
+    is_default = true
+  }
+
+  agent_guardrail {
+    name       = "Sensitive Data Detection"
+    type       = "GUARDRAIL_TYPE_SENSITIVE_DATA"
+    priority   = 3
+    is_default = true
+  }
 }
 
 # Attach knowledge base to the agent after KB indexing completes.
