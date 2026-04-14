@@ -111,3 +111,25 @@ variable "agent_k" {
   default     = 5
   description = "Number of knowledge base documents to retrieve per query."
 }
+
+// =============================================================================
+// GUARDRAIL CONFIGURATION
+// =============================================================================
+
+variable "guardrail_jailbreak_uuid" {
+  type        = string
+  default     = ""
+  description = "UUID of the jailbreak detection guardrail. Resolved by do-terraform."
+}
+
+variable "guardrail_content_mod_uuid" {
+  type        = string
+  default     = ""
+  description = "UUID of the content moderation guardrail. Resolved by do-terraform."
+}
+
+variable "guardrail_sensitive_data_uuid" {
+  type        = string
+  default     = ""
+  description = "UUID of the sensitive data detection guardrail. Resolved by do-terraform."
+}

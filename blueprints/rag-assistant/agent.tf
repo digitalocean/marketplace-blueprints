@@ -15,32 +15,47 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
   provide_citations = true
   retrieval_method  = "RETRIEVAL_METHOD_SUB_QUERIES"
 
-  # Guardrails — attached using the team's default guardrails.
-  # do-terraform ensures guardrails exist for the team before running terraform.
-  agent_guardrail {
-    name       = "Jailbreak Detection"
-    type       = "GUARDRAIL_TYPE_JAILBREAK"
-    priority   = 1
-    is_default = true
+  dynamic "agent_guardrail" {
+    for_each = var.guardrail_jailbreak_uuid != "" ? [1] : []
+    content {
+      guardrail_uuid   = var.guardrail_jailbreak_uuid
+      name             = "Jailbreak Detection"
+      type             = "GUARDRAIL_TYPE_JAILBREAK"
+      priority         = 1
+      default_response = "I'm unable to process that request."
+      description      = "Prevents jailbreak and prompt injection attempts."
+      is_default       = true
+    }
   }
 
-  agent_guardrail {
-    name       = "Content Moderation"
-    type       = "GUARDRAIL_TYPE_CONTENT_MODERATION"
-    priority   = 2
-    is_default = true
+  dynamic "agent_guardrail" {
+    for_each = var.guardrail_content_mod_uuid != "" ? [1] : []
+    content {
+      guardrail_uuid   = var.guardrail_content_mod_uuid
+      name             = "Content Moderation"
+      type             = "GUARDRAIL_TYPE_CONTENT_MODERATION"
+      priority         = 2
+      default_response = "I'm unable to respond to that type of content."
+      description      = "Filters harmful, toxic, or inappropriate content."
+      is_default       = true
+    }
   }
 
-  agent_guardrail {
-    name       = "Sensitive Data Detection"
-    type       = "GUARDRAIL_TYPE_SENSITIVE_DATA"
-    priority   = 3
-    is_default = true
+  dynamic "agent_guardrail" {
+    for_each = var.guardrail_sensitive_data_uuid != "" ? [1] : []
+    content {
+      guardrail_uuid   = var.guardrail_sensitive_data_uuid
+      name             = "Sensitive Data Detection"
+      type             = "GUARDRAIL_TYPE_SENSITIVE_DATA"
+      priority         = 3
+      default_response = "I've detected sensitive information in your request and cannot process it."
+      description      = "Detects and blocks PII and other sensitive data."
+      is_default       = true
+    }
   }
 }
 
 # Attach knowledge base to the agent after KB indexing completes.
-# The KB must finish its initial indexing before it can be attached.
 resource "null_resource" "kb_attachment" {
   depends_on = [
     digitalocean_gradientai_agent.rag_agent,
