@@ -7,12 +7,11 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
   region     = "tor1"
   project_id = local.active_project_id
 
-  model_uuid     = var.model_uuid
-  instruction    = var.agent_instruction
-  temperature    = var.agent_temperature
-  max_tokens     = var.agent_max_tokens
-  k              = var.agent_k
-  workspace_uuid = var.workspace_uuid
+  model_uuid  = var.model_uuid
+  instruction = var.agent_instruction
+  temperature = var.agent_temperature
+  max_tokens  = var.agent_max_tokens
+  k           = var.agent_k
 
   provide_citations = true
   retrieval_method  = "RETRIEVAL_METHOD_SUB_QUERIES"
