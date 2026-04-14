@@ -17,7 +17,7 @@ resource "digitalocean_app" "chat_ui" {
         deploy_on_push = false
       }
 
-      source_dir      = "/blueprints/rag-assistant/chat-ui"
+      source_dir      = "blueprints/rag-assistant/chat-ui"
       dockerfile_path = "Dockerfile"
 
       env {
