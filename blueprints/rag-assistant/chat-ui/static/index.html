@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{AGENT_NAME}}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #f5f7fa; height: 100vh; display: flex; flex-direction: column; }
+    header { background: #0069ff; color: #fff; padding: 16px 24px; font-size: 18px; font-weight: 600; }
+    .chat-container { flex: 1; overflow-y: auto; padding: 24px; max-width: 800px; width: 100%; margin: 0 auto; }
+    .message { margin-bottom: 16px; display: flex; }
+    .message.user { justify-content: flex-end; }
+    .message.assistant { justify-content: flex-start; }
+    .bubble { max-width: 75%; padding: 12px 16px; border-radius: 12px; line-height: 1.5; white-space: pre-wrap; word-wrap: break-word; }
+    .user .bubble { background: #0069ff; color: #fff; border-bottom-right-radius: 4px; }
+    .assistant .bubble { background: #fff; color: #333; border: 1px solid #e1e5ea; border-bottom-left-radius: 4px; }
+    .input-area { background: #fff; border-top: 1px solid #e1e5ea; padding: 16px 24px; }
+    .input-row { max-width: 800px; margin: 0 auto; display: flex; gap: 12px; }
+    input[type="text"] { flex: 1; padding: 12px 16px; border: 1px solid #ddd; border-radius: 8px; font-size: 15px; outline: none; }
+    input[type="text"]:focus { border-color: #0069ff; }
+    button { padding: 12px 24px; background: #0069ff; color: #fff; border: none; border-radius: 8px; font-size: 15px; cursor: pointer; }
+    button:hover { background: #0055d4; }
+    button:disabled { background: #a0c4ff; cursor: not-allowed; }
+    .empty-state { text-align: center; color: #999; margin-top: 40vh; }
+    .empty-state h2 { font-size: 20px; margin-bottom: 8px; color: #666; }
+    .typing { display: inline-block; }
+    .typing::after { content: '...'; animation: dots 1s steps(3, end) infinite; }
+    @keyframes dots { 0% { content: ''; } 33% { content: '.'; } 66% { content: '..'; } 100% { content: '...'; } }
+  </style>
+</head>
+<body>
+  <header>{{AGENT_NAME}}</header>
+  <div class="chat-container" id="chat">
+    <div class="empty-state" id="empty">
+      <h2>Ask me anything</h2>
+      <p>Upload documents to the knowledge base, then ask questions about them.</p>
+    </div>
+  </div>
+  <div class="input-area">
+    <div class="input-row">
+      <input type="text" id="input" placeholder="Type your message..." autofocus />
+      <button id="send" onclick="sendMessage()">Send</button>
+    </div>
+  </div>
+  <script>
+    let threadId = null;
+
+    document.getElementById('input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    async function sendMessage() {
+      const input = document.getElementById('input');
+      const message = input.value.trim();
+      if (!message) return;
+
+      // Remove empty state.
+      const empty = document.getElementById('empty');
+      if (empty) empty.remove();
+
+      // Show user message.
+      appendMessage('user', message);
+      input.value = '';
+      document.getElementById('send').disabled = true;
+
+      // Show typing indicator.
+      const typingId = appendMessage('assistant', '<span class="typing">Thinking</span>');
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, thread_id: threadId }),
+        });
+
+        const data = await res.json();
+
+        // Extract response text and thread_id from the agent API response.
+        const responseText = data.data?.content || data.content || data.message || JSON.stringify(data);
+        if (data.data?.thread_id) threadId = data.data.thread_id;
+        if (data.thread_id) threadId = data.thread_id;
+
+        // Replace typing indicator with actual response.
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.querySelector('.bubble').innerHTML = escapeHtml(responseText);
+      } catch (err) {
+        const typingEl = document.getElementById(typingId);
+        if (typingEl) typingEl.querySelector('.bubble').textContent = 'Error: ' + err.message;
+      }
+
+      document.getElementById('send').disabled = false;
+      input.focus();
+    }
+
+    function appendMessage(role, html) {
+      const chat = document.getElementById('chat');
+      const id = 'msg-' + Date.now();
+      const div = document.createElement('div');
+      div.className = 'message ' + role;
+      div.id = id;
+      div.innerHTML = '<div class="bubble">' + html + '</div>';
+      chat.appendChild(div);
+      chat.scrollTop = chat.scrollHeight;
+      return id;
+    }
+
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+  </script>
+</body>
+</html>
