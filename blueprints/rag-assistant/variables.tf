@@ -111,8 +111,3 @@ variable "agent_k" {
   default     = 5
   description = "Number of knowledge base documents to retrieve per query."
 }
-
-variable "workspace_uuid" {
-  type        = string
-  description = "UUID of the GenAI workspace for the agent. Created by the do-terraform service."
-}
