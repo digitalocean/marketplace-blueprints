@@ -16,10 +16,8 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
   retrieval_method  = "RETRIEVAL_METHOD_SUB_QUERIES"
 }
 
-# Attach knowledge base to the agent.
-# NOTE: The terraform digitalocean_gradientai_agent_knowledge_base_attachment resource
-# uses the singular API endpoint which returns 400. The plural endpoint works.
-# Using null_resource as a workaround until the provider/godo SDK is fixed.
+# Attach knowledge base to the agent after KB indexing completes.
+# The KB must finish its initial indexing before it can be attached.
 resource "null_resource" "kb_attachment" {
   depends_on = [
     digitalocean_gradientai_agent.rag_agent,
@@ -33,11 +31,30 @@ resource "null_resource" "kb_attachment" {
 
   provisioner "local-exec" {
     command = <<-EOT
+      set -e
+      AGENT_ID="${digitalocean_gradientai_agent.rag_agent.id}"
+      KB_ID="${digitalocean_gradientai_knowledge_base.kb.id}"
+      TOKEN="${var.do_token}"
+      API="https://api.digitalocean.com/v2/gen-ai"
+
+      echo "Waiting for KB indexing to complete..."
+      for i in $(seq 1 60); do
+        STATUS=$(curl -sf -H "Authorization: Bearer $TOKEN" "$API/knowledge_bases/$KB_ID" | python3 -c "import json,sys; print(json.load(sys.stdin)['knowledge_base'].get('last_indexing_job',{}).get('status','unknown'))" 2>/dev/null || echo "unknown")
+        if [ "$STATUS" = "INDEX_JOB_STATUS_COMPLETED" ]; then
+          echo "KB indexing complete"
+          break
+        fi
+        echo "  KB status: $STATUS (attempt $i/60)"
+        sleep 10
+      done
+
+      echo "Attaching KB to agent..."
       curl -sf -X POST \
-        -H "Authorization: Bearer ${var.do_token}" \
+        -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
-        -d '{"knowledge_base_uuids":["${digitalocean_gradientai_knowledge_base.kb.id}"]}' \
-        "https://api.digitalocean.com/v2/gen-ai/agents/${digitalocean_gradientai_agent.rag_agent.id}/knowledge_bases"
+        -d '{}' \
+        "$API/agents/$AGENT_ID/knowledge_bases/$KB_ID"
+      echo "KB attached successfully"
     EOT
   }
 }
