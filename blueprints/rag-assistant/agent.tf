@@ -14,49 +14,11 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
 
   provide_citations = true
   retrieval_method  = "RETRIEVAL_METHOD_SUB_QUERIES"
-
-  dynamic "agent_guardrail" {
-    for_each = var.guardrail_jailbreak_uuid != "" ? [1] : []
-    content {
-      guardrail_uuid   = var.guardrail_jailbreak_uuid
-      name             = "Jailbreak Detection"
-      type             = "GUARDRAIL_TYPE_JAILBREAK"
-      priority         = 1
-      default_response = "I'm unable to process that request."
-      description      = "Prevents jailbreak and prompt injection attempts."
-      is_default       = true
-    }
-  }
-
-  dynamic "agent_guardrail" {
-    for_each = var.guardrail_content_mod_uuid != "" ? [1] : []
-    content {
-      guardrail_uuid   = var.guardrail_content_mod_uuid
-      name             = "Content Moderation"
-      type             = "GUARDRAIL_TYPE_CONTENT_MODERATION"
-      priority         = 2
-      default_response = "I'm unable to respond to that type of content."
-      description      = "Filters harmful, toxic, or inappropriate content."
-      is_default       = true
-    }
-  }
-
-  dynamic "agent_guardrail" {
-    for_each = var.guardrail_sensitive_data_uuid != "" ? [1] : []
-    content {
-      guardrail_uuid   = var.guardrail_sensitive_data_uuid
-      name             = "Sensitive Data Detection"
-      type             = "GUARDRAIL_TYPE_SENSITIVE_DATA"
-      priority         = 3
-      default_response = "I've detected sensitive information in your request and cannot process it."
-      description      = "Detects and blocks PII and other sensitive data."
-      is_default       = true
-    }
-  }
 }
 
-# Attach knowledge base to the agent after KB indexing completes.
-resource "null_resource" "kb_attachment" {
+# Post-creation: attach KB and guardrails.
+# The terraform provider cannot attach these on create (godo SDK limitation).
+resource "null_resource" "agent_post_setup" {
   depends_on = [
     digitalocean_gradientai_agent.rag_agent,
     digitalocean_gradientai_knowledge_base.kb,
@@ -75,6 +37,7 @@ resource "null_resource" "kb_attachment" {
       TOKEN="${var.do_token}"
       API="https://api.digitalocean.com/v2/gen-ai"
 
+      # 1. Wait for KB indexing to complete (required before attachment).
       echo "Waiting for KB indexing to complete..."
       for i in $(seq 1 60); do
         STATUS=$(curl -sf -H "Authorization: Bearer $TOKEN" "$API/knowledge_bases/$KB_ID" | python3 -c "import json,sys; print(json.load(sys.stdin)['knowledge_base'].get('last_indexing_job',{}).get('status','unknown'))" 2>/dev/null || echo "unknown")
@@ -86,13 +49,36 @@ resource "null_resource" "kb_attachment" {
         sleep 10
       done
 
+      # 2. Attach KB to agent.
       echo "Attaching KB to agent..."
       curl -sf -X POST \
         -H "Authorization: Bearer $TOKEN" \
         -H "Content-Type: application/json" \
         -d '{}' \
         "$API/agents/$AGENT_ID/knowledge_bases/$KB_ID"
-      echo "KB attached successfully"
+      echo "KB attached"
+
+      # 3. Attach guardrails to agent.
+      GUARDRAILS='[]'
+      %{if var.guardrail_jailbreak_uuid != ""~}
+      GUARDRAILS=$(echo "$GUARDRAILS" | python3 -c "import json,sys; g=json.load(sys.stdin); g.append({'guardrail_uuid':'${var.guardrail_jailbreak_uuid}','priority':1}); print(json.dumps(g))")
+      %{endif~}
+      %{if var.guardrail_content_mod_uuid != ""~}
+      GUARDRAILS=$(echo "$GUARDRAILS" | python3 -c "import json,sys; g=json.load(sys.stdin); g.append({'guardrail_uuid':'${var.guardrail_content_mod_uuid}','priority':2}); print(json.dumps(g))")
+      %{endif~}
+      %{if var.guardrail_sensitive_data_uuid != ""~}
+      GUARDRAILS=$(echo "$GUARDRAILS" | python3 -c "import json,sys; g=json.load(sys.stdin); g.append({'guardrail_uuid':'${var.guardrail_sensitive_data_uuid}','priority':3}); print(json.dumps(g))")
+      %{endif~}
+
+      if [ "$GUARDRAILS" != "[]" ]; then
+        echo "Attaching guardrails..."
+        curl -sf -X POST \
+          -H "Authorization: Bearer $TOKEN" \
+          -H "Content-Type: application/json" \
+          -d "{\"guardrails\":$GUARDRAILS}" \
+          "$API/agents/$AGENT_ID/guardrails"
+        echo "Guardrails attached"
+      fi
     EOT
   }
 }

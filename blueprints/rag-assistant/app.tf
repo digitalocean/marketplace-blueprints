@@ -2,7 +2,7 @@
 # Serves a simple web interface that calls the managed agent's chat API.
 # The app self-discovers the agent's deployment URL and API key at startup.
 resource "digitalocean_app" "chat_ui" {
-  depends_on = [null_resource.kb_attachment]
+  depends_on = [null_resource.agent_post_setup]
 
   spec {
     name   = "${local.resource_name}-chat"
