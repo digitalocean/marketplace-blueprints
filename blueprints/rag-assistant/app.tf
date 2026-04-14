@@ -18,7 +18,7 @@ resource "digitalocean_app" "chat_ui" {
       }
 
       source_dir      = "blueprints/rag-assistant/chat-ui"
-      dockerfile_path = "Dockerfile"
+      dockerfile_path = "blueprints/rag-assistant/chat-ui/Dockerfile"
 
       env {
         key   = "AGENT_UUID"
