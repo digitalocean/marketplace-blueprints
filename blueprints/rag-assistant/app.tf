@@ -1,5 +1,6 @@
 # Chat UI deployed on App Platform.
 # Serves a simple web interface that calls the managed agent's chat API.
+# The app self-discovers the agent's deployment URL and API key at startup.
 resource "digitalocean_app" "chat_ui" {
   depends_on = [digitalocean_gradientai_agent_knowledge_base_attachment.kb_attachment]
 
@@ -42,16 +43,10 @@ resource "digitalocean_app" "chat_ui" {
       }
 
       env {
-        key   = "AGENT_API_KEY"
-        value = digitalocean_gradientai_agent.rag_agent.api_keys[0].api_key
+        key   = "DO_API_TOKEN"
+        value = var.do_token
         scope = "RUN_TIME"
         type  = "SECRET"
-      }
-
-      env {
-        key   = "AGENT_ENDPOINT"
-        value = "${digitalocean_gradientai_agent.rag_agent.deployment[0].url}/api/v1/chat/completions"
-        scope = "RUN_TIME"
       }
 
       env {
