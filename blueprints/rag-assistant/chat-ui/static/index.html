@@ -1,0 +1,347 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{AGENT_NAME}}</title>
+  <style>
+    :root {
+      --do-blue: #0069ff;
+      --do-blue-hover: #0055d4;
+      --do-blue-light: #e8f0ff;
+      --do-dark: #0d2137;
+      --do-gray-50: #f8f9fb;
+      --do-gray-100: #f0f2f5;
+      --do-gray-200: #e1e5ea;
+      --do-gray-300: #c8cfd7;
+      --do-gray-500: #8892a2;
+      --do-gray-700: #4a5568;
+      --do-gray-900: #1a202c;
+      --do-white: #ffffff;
+      --do-green: #15cd72;
+      --do-radius: 8px;
+      --do-radius-lg: 12px;
+      --do-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.06);
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: var(--do-gray-50);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      color: var(--do-gray-900);
+    }
+    header {
+      background: var(--do-dark);
+      padding: 0 24px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+    }
+    .header-logo {
+      width: 28px; height: 28px;
+      background: var(--do-blue);
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+    }
+    .header-logo svg { width: 18px; height: 18px; fill: white; }
+    .header-title { color: white; font-size: 15px; font-weight: 600; }
+    .header-badge {
+      background: rgba(255,255,255,0.12);
+      color: rgba(255,255,255,0.7);
+      font-size: 11px;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 500;
+    }
+    .chat-container { flex: 1; overflow-y: auto; padding: 24px 16px; }
+    .chat-inner { max-width: 720px; margin: 0 auto; }
+
+    /* Empty state */
+    .empty-state { text-align: center; padding-top: 10vh; }
+    .empty-icon {
+      width: 64px; height: 64px;
+      background: linear-gradient(135deg, var(--do-blue), #0055d4);
+      border-radius: 18px;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 20px;
+      box-shadow: 0 4px 16px rgba(0,105,255,0.25);
+    }
+    .empty-icon svg { width: 32px; height: 32px; fill: white; }
+    .empty-state h2 { font-size: 22px; font-weight: 700; margin-bottom: 8px; }
+    .empty-state p { color: var(--do-gray-500); font-size: 14px; line-height: 1.6; max-width: 480px; margin: 0 auto 24px; }
+
+    /* Getting started steps */
+    .steps {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 28px;
+      flex-wrap: wrap;
+    }
+    .step {
+      background: var(--do-white);
+      border: 1px solid var(--do-gray-200);
+      border-radius: var(--do-radius-lg);
+      padding: 14px 18px;
+      text-align: left;
+      width: 200px;
+      box-shadow: var(--do-shadow);
+    }
+    .step-num {
+      width: 22px; height: 22px;
+      background: var(--do-blue-light);
+      color: var(--do-blue);
+      border-radius: 50%;
+      font-size: 11px; font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+      margin-bottom: 8px;
+    }
+    .step h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; }
+    .step p { font-size: 12px; color: var(--do-gray-500); line-height: 1.4; }
+
+    /* Suggested prompts */
+    .prompts-label { font-size: 12px; font-weight: 600; color: var(--do-gray-500); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px; }
+    .prompts { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; max-width: 600px; margin: 0 auto; }
+    .prompt-btn {
+      background: var(--do-white);
+      border: 1px solid var(--do-gray-200);
+      border-radius: 20px;
+      padding: 8px 16px;
+      font-size: 13px;
+      color: var(--do-gray-700);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-family: inherit;
+    }
+    .prompt-btn:hover { border-color: var(--do-blue); color: var(--do-blue); background: var(--do-blue-light); }
+
+    /* Messages */
+    .message { margin-bottom: 20px; display: flex; gap: 12px; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+    .message.user { flex-direction: row-reverse; }
+    .avatar {
+      width: 32px; height: 32px;
+      border-radius: 8px;
+      flex-shrink: 0;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 13px; font-weight: 600;
+    }
+    .message.assistant .avatar { background: var(--do-blue); color: white; }
+    .message.user .avatar { background: var(--do-gray-200); color: var(--do-gray-700); }
+    .bubble {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: var(--do-radius-lg);
+      line-height: 1.6;
+      font-size: 14px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    .message.user .bubble { background: var(--do-blue); color: white; border-bottom-right-radius: 4px; }
+    .message.assistant .bubble { background: var(--do-white); color: var(--do-gray-900); border: 1px solid var(--do-gray-200); border-bottom-left-radius: 4px; box-shadow: var(--do-shadow); }
+    .typing-dots { display: inline-flex; gap: 4px; padding: 4px 0; }
+    .typing-dots span {
+      width: 6px; height: 6px;
+      background: var(--do-gray-300);
+      border-radius: 50%;
+      animation: typingBounce 1.2s ease infinite;
+    }
+    .typing-dots span:nth-child(2) { animation-delay: 0.2s; }
+    .typing-dots span:nth-child(3) { animation-delay: 0.4s; }
+    @keyframes typingBounce { 0%, 60%, 100% { transform: translateY(0); } 30% { transform: translateY(-4px); } }
+    .error-bubble { background: #fef2f2 !important; border-color: #fecaca !important; color: #991b1b !important; }
+
+    /* Input area */
+    .input-area { background: var(--do-white); border-top: 1px solid var(--do-gray-200); padding: 16px; flex-shrink: 0; }
+    .input-inner { max-width: 720px; margin: 0 auto; display: flex; gap: 8px; align-items: center; }
+    .input-wrapper { flex: 1; }
+    textarea {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--do-gray-200);
+      border-radius: var(--do-radius);
+      font-size: 14px;
+      font-family: inherit;
+      line-height: 1.5;
+      resize: none;
+      outline: none;
+      transition: border-color 0.15s;
+      height: 42px;
+      min-height: 42px;
+      max-height: 120px;
+    }
+    textarea:focus { border-color: var(--do-blue); box-shadow: 0 0 0 3px rgba(0,105,255,0.1); }
+    textarea::placeholder { color: var(--do-gray-300); }
+    .send-btn {
+      width: 42px; height: 42px;
+      background: var(--do-blue);
+      color: white;
+      border: none;
+      border-radius: var(--do-radius);
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background 0.15s;
+      flex-shrink: 0;
+    }
+    .send-btn:hover { background: var(--do-blue-hover); }
+    .send-btn:disabled { background: var(--do-gray-200); cursor: not-allowed; }
+    .send-btn svg { width: 18px; height: 18px; fill: currentColor; }
+    .input-hint { font-size: 11px; color: var(--do-gray-300); margin-top: 6px; text-align: center; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="header-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.94-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+    </div>
+    <span class="header-title">{{AGENT_NAME}}</span>
+    <span class="header-badge">Powered by DigitalOcean GenAI</span>
+  </header>
+
+  <div class="chat-container" id="chat">
+    <div class="chat-inner" id="chatInner">
+      <div class="empty-state" id="empty">
+        <div class="empty-icon">
+          <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+        </div>
+        <h2>Welcome to your RAG Assistant</h2>
+        <p>This assistant answers questions using your knowledge base documents. Upload your docs to get started, then ask anything.</p>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <h4>Upload Documents</h4>
+            <p>Go to the DigitalOcean console and add files to your Knowledge Base.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <h4>Ask Questions</h4>
+            <p>Type a question below and the assistant will search your docs for answers.</p>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <h4>Get Answers</h4>
+            <p>Responses are grounded in your documents with citations when available.</p>
+          </div>
+        </div>
+
+        <div class="prompts-label">Try asking</div>
+        <div class="prompts">
+          <button class="prompt-btn" onclick="usePrompt(this)">What topics are covered in my documents?</button>
+          <button class="prompt-btn" onclick="usePrompt(this)">Summarize the key points from my knowledge base</button>
+          <button class="prompt-btn" onclick="usePrompt(this)">What is the most important thing to know?</button>
+          <button class="prompt-btn" onclick="usePrompt(this)">Help me find information about...</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="input-area">
+    <div class="input-inner">
+      <div class="input-wrapper">
+        <textarea id="input" rows="1" placeholder="Ask a question about your documents..." autofocus></textarea>
+      </div>
+      <button class="send-btn" id="send" onclick="sendMessage()" title="Send message">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+    <div class="input-hint">Press Enter to send, Shift+Enter for new line</div>
+  </div>
+
+  <script>
+    const chatInner = document.getElementById('chatInner');
+    const chatContainer = document.getElementById('chat');
+    const textarea = document.getElementById('input');
+    const sendBtn = document.getElementById('send');
+    let history = [];
+
+    textarea.addEventListener('input', function() {
+      this.style.height = 'auto';
+      this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+    });
+    textarea.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+    });
+
+    function usePrompt(btn) {
+      textarea.value = btn.textContent;
+      textarea.focus();
+      sendMessage();
+    }
+
+    async function sendMessage() {
+      const message = textarea.value.trim();
+      if (!message) return;
+
+      const empty = document.getElementById('empty');
+      if (empty) empty.remove();
+
+      appendMessage('user', message);
+      history.push({ role: 'user', content: message });
+
+      textarea.value = '';
+      textarea.style.height = 'auto';
+      sendBtn.disabled = true;
+
+      const typingEl = appendTyping();
+
+      try {
+        const res = await fetch('/api/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, history: history.slice(0, -1) }),
+        });
+        const data = await res.json();
+        const content = data.content || data.error || 'No response received.';
+        const isError = !!data.error || res.status >= 400;
+
+        typingEl.remove();
+        appendMessage('assistant', content, isError);
+        history.push({ role: 'assistant', content });
+      } catch (err) {
+        typingEl.remove();
+        appendMessage('assistant', 'Connection error: ' + err.message, true);
+      }
+
+      sendBtn.disabled = false;
+      textarea.focus();
+    }
+
+    function appendMessage(role, text, isError) {
+      const div = document.createElement('div');
+      div.className = 'message ' + role;
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = role === 'user' ? 'Y' : 'AI';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble' + (isError ? ' error-bubble' : '');
+      bubble.textContent = text;
+      div.appendChild(avatar);
+      div.appendChild(bubble);
+      chatInner.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      return div;
+    }
+
+    function appendTyping() {
+      const div = document.createElement('div');
+      div.className = 'message assistant';
+      const avatar = document.createElement('div');
+      avatar.className = 'avatar';
+      avatar.textContent = 'AI';
+      const bubble = document.createElement('div');
+      bubble.className = 'bubble';
+      bubble.innerHTML = '<div class="typing-dots"><span></span><span></span><span></span></div>';
+      div.appendChild(avatar);
+      div.appendChild(bubble);
+      chatInner.appendChild(div);
+      chatContainer.scrollTop = chatContainer.scrollHeight;
+      return div;
+    }
+  </script>
+</body>
+</html>
