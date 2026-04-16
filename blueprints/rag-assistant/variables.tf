@@ -80,7 +80,7 @@ variable "_app_source_repo" {
 
 variable "_app_source_branch" {
   type        = string
-  default     = "main"
+  default     = "master"
   description = "Git branch for the app source code."
 }
 
