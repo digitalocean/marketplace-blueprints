@@ -1,33 +1,3 @@
-# Resolve model UUIDs from internal names via the public DO API.
-data "external" "resolve_models" {
-  program = ["sh", "-c", <<-EOT
-    TOKEN="${var.do_token}"
-    MODELS=$(curl -sf -H "Authorization: Bearer $TOKEN" "https://api.digitalocean.com/v2/gen-ai/models?per_page=200" 2>/dev/null || echo '{"models":[]}')
-
-    # Extract UUID for default model by matching the "id" field.
-    MODEL_UUID=""
-    MODEL_LINE=$(echo "$MODELS" | tr ',' '\n' | grep -A50 "\"id\":\"${var.default_model}\"" | grep '"uuid"' | head -1)
-    if [ -n "$MODEL_LINE" ]; then
-      MODEL_UUID=$(echo "$MODEL_LINE" | sed 's/.*"uuid":"\([^"]*\)".*/\1/')
-    fi
-
-    # Extract UUID for embedding model.
-    EMBED_UUID=""
-    EMBED_LINE=$(echo "$MODELS" | tr ',' '\n' | grep -A50 "\"id\":\"${var.embedding_model}\"" | grep '"uuid"' | head -1)
-    if [ -n "$EMBED_LINE" ]; then
-      EMBED_UUID=$(echo "$EMBED_LINE" | sed 's/.*"uuid":"\([^"]*\)".*/\1/')
-    fi
-
-    echo "{\"model_uuid\":\"$MODEL_UUID\",\"embedding_model_uuid\":\"$EMBED_UUID\"}"
-  EOT
-  ]
-}
-
-locals {
-  resolved_model_uuid     = var.model_uuid != "" ? var.model_uuid : data.external.resolve_models.result.model_uuid
-  resolved_embedding_uuid = var.embedding_model_uuid != "" ? var.embedding_model_uuid : data.external.resolve_models.result.embedding_model_uuid
-}
-
 # Managed agent for RAG interactions.
 resource "digitalocean_gradientai_agent" "rag_agent" {
   name        = "${local.resource_name}-agent"
@@ -36,7 +6,7 @@ resource "digitalocean_gradientai_agent" "rag_agent" {
   region     = "tor1"
   project_id = local.active_project_id
 
-  model_uuid  = local.resolved_model_uuid
+  model_uuid  = var.model_uuid
   instruction = var.agent_instruction
   temperature = var.agent_temperature
   max_tokens  = var.agent_max_tokens
