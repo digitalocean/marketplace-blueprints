@@ -4,7 +4,7 @@
 resource "digitalocean_gradientai_knowledge_base" "kb" {
   name                 = "${local.resource_name}-kb"
   project_id           = local.active_project_id
-  region               = var.region
+  region               = "tor1"
   embedding_model_uuid = var.embedding_model_uuid
   tags                 = [digitalocean_tag.tag.name]
 
