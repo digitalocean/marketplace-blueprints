@@ -5,13 +5,14 @@ resource "random_string" "suffix" {
 }
 
 locals {
-  resource_name = "${var.basename}-${random_string.suffix.result}"
+  resource_name        = "${var.basename}-${random_string.suffix.result}"
+  project_display_name = var.project_name != "" ? var.project_name : var.basename
 }
 
 # Create a new project if project_uuid is not provided.
 resource "digitalocean_project" "rag_assistant" {
   count       = var.project_uuid == "" ? 1 : 0
-  name        = local.resource_name
+  name        = local.project_display_name
   purpose     = "RAG Assistant"
   environment = "Development"
 }

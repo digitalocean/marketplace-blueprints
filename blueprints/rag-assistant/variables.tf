@@ -30,6 +30,12 @@ variable "basename" {
   description = "The base name used to auto-generate resource names."
 }
 
+variable "project_name" {
+  type        = string
+  default     = ""
+  description = "Display name for the DO project. Defaults to basename if empty."
+}
+
 variable "region" {
   type        = string
   default     = "nyc3"

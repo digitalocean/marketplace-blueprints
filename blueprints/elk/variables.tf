@@ -10,6 +10,12 @@ variable "stack_name" {
   description = "Prefix for the auto-generated project name, droplet hostnames, and primary stack tag; a random suffix is appended (e.g. elk-a1b2c3)."
 }
 
+variable "project_name" {
+  type        = string
+  default     = ""
+  description = "Display name for the DO project. Defaults to stack_name if empty."
+}
+
 variable "droplet_size_slug" {
   default = "s-4vcpu-8gb"
 }

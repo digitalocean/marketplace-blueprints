@@ -24,6 +24,12 @@ variable "basename" {
   default     = "data-workflow-starter-kit"
 }
 
+variable "project_name" {
+  type        = string
+  default     = ""
+  description = "Display name for the DO project. Defaults to basename if empty."
+}
+
 variable "region" {
   type        = string
   description = "DigitalOcean region"
