@@ -23,3 +23,8 @@ output "database_ids" {
   value       = [digitalocean_database_cluster.db-cluster.id, digitalocean_database_cluster.kv-cluster.id]
   description = "Database cluster resource IDs (Postgres + Valkey)."
 }
+
+output "project_id" {
+  value       = local.active_project_id
+  description = "Project ID containing all resources."
+}
