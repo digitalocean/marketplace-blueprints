@@ -137,3 +137,9 @@ variable "_keystore_protocol" {
   type    = string
   default = "redis"
 }
+
+variable "ssh_key_ids" {
+  type        = list(string)
+  default     = []
+  description = "List of SSH key IDs to add to droplets. If empty, all account SSH keys are used."
+}

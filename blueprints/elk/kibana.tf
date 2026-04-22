@@ -11,7 +11,7 @@ resource "digitalocean_droplet" "kibana" {
   monitoring = true
   region     = var.region
   size       = var.droplet_size_slug
-  ssh_keys   = [for key in data.digitalocean_ssh_keys.keys.ssh_keys : key.fingerprint]
+  ssh_keys   = local.ssh_keys
   tags       = concat([digitalocean_tag.stack.id], [for k, v in digitalocean_tag.tags : v.id])
 
   depends_on = [digitalocean_droplet.elasticsearch]

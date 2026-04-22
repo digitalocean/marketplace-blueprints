@@ -39,3 +39,9 @@ variable "provision_kibana_enrollment" {
   default     = false
   description = "When true, Terraform runs scripts/kibana-enrollment.sh after droplets exist: SSH to Elasticsearch reads KIBANA_ENROLLMENT_TOKEN from /root/.digitalocean_passwords, then runs kibana-setup on Kibana. Requires the machine running terraform apply to reach both droplets as root via SSH (same keys as the DO provider). When false, Kibana is configured with elasticsearch.username/password in cloud-init only."
 }
+
+variable "ssh_key_ids" {
+  type        = list(string)
+  default     = []
+  description = "List of SSH key IDs to add to droplets. If empty, all account SSH keys are used."
+}
