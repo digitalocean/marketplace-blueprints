@@ -36,6 +36,6 @@ variable "api_host" {
 
 variable "provision_kibana_enrollment" {
   type        = bool
-  default     = true
+  default     = false
   description = "When true, Terraform runs scripts/kibana-enrollment.sh after droplets exist: SSH to Elasticsearch reads KIBANA_ENROLLMENT_TOKEN from /root/.digitalocean_passwords, then runs kibana-setup on Kibana. Requires the machine running terraform apply to reach both droplets as root via SSH (same keys as the DO provider). When false, Kibana is configured with elasticsearch.username/password in cloud-init only."
 }
