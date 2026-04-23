@@ -38,7 +38,6 @@ resource "digitalocean_droplet" "elasticsearch" {
     KIBANA_PASSWORD=${random_password.kibana_password.result}
     LOGSTASH_PASSWORD=${random_password.logstash_password.result}
     LOGSTASH_SYSTEM_PASSWORD=$${LOGSTASH_SYSTEM_PASSWORD}
-    KIBANA_ENROLLMENT_TOKEN=$${KIBANA_ENROLLMENT_TOKEN}
     EOM
 
     echo "Updating ElasticSearch config" >> /var/log/user_data.log
