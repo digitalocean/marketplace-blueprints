@@ -2,7 +2,7 @@
 # Serves a simple web interface that calls the managed agent's chat API.
 # The app self-discovers the agent's deployment URL and API key at startup.
 resource "digitalocean_app" "chat_ui" {
-  depends_on = [null_resource.agent_post_setup]
+  depends_on = [digitalocean_gradientai_agent.rag_agent]
 
   spec {
     name   = "${local.resource_name}-chat"
@@ -27,10 +27,9 @@ resource "digitalocean_app" "chat_ui" {
       instance_size_slug = var.app_instance_size
       http_port          = 8080
 
-      github {
-        repo           = var._app_source_repo
+      git {
+        repo_clone_url = "https://github.com/${var._app_source_repo}.git"
         branch         = var._app_source_branch
-        deploy_on_push = false
       }
 
       source_dir      = "blueprints/rag-assistant/chat-ui"
