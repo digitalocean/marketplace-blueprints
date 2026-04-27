@@ -1,4 +1,4 @@
-output "chat_ui_url" {
+output "app_url" {
   value       = digitalocean_app.chat_ui.live_url
   description = "URL of the chat UI application."
 }

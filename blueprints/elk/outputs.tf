@@ -1,4 +1,4 @@
-output "kibana_url" {
+output "app_url" {
   description = "URL of the Kibana web UI"
   value       = "http://${digitalocean_droplet.kibana.ipv4_address}:5601"
 }

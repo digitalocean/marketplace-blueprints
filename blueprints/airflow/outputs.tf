@@ -1,4 +1,4 @@
-output "airflow_url" {
+output "app_url" {
   description = "URL of the Airflow web UI"
   value       = "http://${digitalocean_droplet.airflow.ipv4_address}"
 }
