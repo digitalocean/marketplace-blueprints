@@ -1,3 +1,8 @@
+output "kibana_url" {
+  description = "URL of the Kibana web UI"
+  value       = "http://${digitalocean_droplet.kibana.ipv4_address}:5601"
+}
+
 output "project_id" {
   description = "DigitalOcean project ID containing all stack resources"
   value       = digitalocean_project.elk.id

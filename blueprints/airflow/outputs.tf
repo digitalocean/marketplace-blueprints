@@ -1,3 +1,8 @@
+output "airflow_url" {
+  description = "URL of the Airflow web UI"
+  value       = "http://${digitalocean_droplet.airflow.ipv4_address}"
+}
+
 output "droplet_id" {
   description = "ID of created droplet"
   value       = digitalocean_droplet.airflow.id
