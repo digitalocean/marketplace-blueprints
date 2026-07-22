@@ -1,5 +1,17 @@
 # Welcome to the DigitalOcean RAG Assistant Terraform Stack!
-
+User  ──>  Chat UI (App Platform)
+               │
+               ▼
+         Managed Agent  ──>  Guardrails (jailbreak / content / PII)
+               │
+               ▼
+         Knowledge Base  ──>  Embedding Model (Qwen3 0.6B)
+               │
+               ▼
+       Serverless Inference (configurable model)
+               │
+               ▼
+           Response
 This stack deploys a fully functional Retrieval-Augmented Generation (RAG) assistant on DigitalOcean, including:
 
 - A **managed GenAI agent** with serverless inference for question answering.
